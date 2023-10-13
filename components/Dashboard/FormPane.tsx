@@ -19,6 +19,7 @@ import {
   formatToLocalDateTime,
   getTimeDistance,
 } from '@/utils/time'
+import { any } from 'zod'
 
 const actionButtons = [
   {
@@ -31,7 +32,7 @@ const actionButtons = [
   },
   {
     label: 'Copy',
-    icon: Copy
+    icon: Copy,
   },
   {
     label: 'Delete',
@@ -44,15 +45,33 @@ const FormPane: React.FC = () => {
   const { project } = useSelectedProject()
   const { forms } = useListForms(project?.id)
 
-  const handleCopyClick = async (link:string) => {
+  const handleDeleteClick = async (link: string) => {
     try {
-      await navigator.clipboard.writeText(link);
-     toast.success('Link Copied')
-      
+      const response = await fetch(`http://localhost/api/forms/${link}`, {
+        method: 'DELETE',
+      })
+
+      console.log(response)
+
+      if (response.ok) {
+        toast.success('Form Deleted')
+      } else {
+        toast.error('Failed to delete form')
+      }
     } catch (error) {
-      console.error('Failed to copy text: ', error);
+      console.error('Failed to delete form: ', error)
+      toast.error('Failed to delete form')
     }
-  };
+  }
+
+  const handleCopyClick = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link)
+      toast.success('Link Copied')
+    } catch (error) {
+      console.error('Failed to copy text: ', error)
+    }
+  }
   const router = useRouter()
 
   const [selectedRow, setSelectedRow] = useState(false)
@@ -117,7 +136,11 @@ const FormPane: React.FC = () => {
                           ? router.push(
                               `/dashboard/${project?.subdomain}/forms/edit/${form?.id}`
                             )
-                          :label.toLowerCase() === 'copy'?handleCopyClick(`http://localhost/${form?.slug}`):null
+                          : label.toLowerCase() === 'copy'
+                          ? handleCopyClick(`http://localhost/${form?.slug}`)
+                          : label.toLowerCase() === 'delete'
+                          ? handleDeleteClick(`http://localhost/${form?.slug}`)
+                          : null
                       }
                       className={cn(
                         'offset_ring rounded-md p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800',
